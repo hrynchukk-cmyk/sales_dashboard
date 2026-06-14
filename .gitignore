@@ -3,7 +3,11 @@ node_modules
 out
 build
 *.log
-.env
+# NOTE: .env is committed on purpose — it holds only non-sensitive dev defaults
+# (local SQLite + a throwaway JWT secret) so the project runs straight after download.
+# Use real secrets via the environment in production.
+.env.local
+.env.production
 .DS_Store
 next-env.d.ts
 
