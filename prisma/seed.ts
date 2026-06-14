@@ -16,6 +16,12 @@ function addDays(d: Date, n: number) {
   x.setDate(x.getDate() + n);
   return x;
 }
+function makeInviteCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 8; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
 
 async function main() {
   console.log("🌱 Seeding...");
@@ -163,6 +169,7 @@ async function main() {
         weeklyPlan: sd.weekly,
         monthlyPlan: sd.monthly,
         onboardingDone: sd.onboarding === "done",
+        inviteCode: makeInviteCode(),
       },
     });
 

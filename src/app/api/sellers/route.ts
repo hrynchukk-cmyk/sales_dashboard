@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin, handler } from "@/lib/api";
 import { hashPassword } from "@/lib/auth";
+import { makeInviteCode } from "@/lib/course";
 
 export async function GET() {
   return handler(async () => {
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
         earningPercent: Number(b.earningPercent) || 10,
         weeklyPlan: Number(b.weeklyPlan) || 0,
         monthlyPlan: Number(b.monthlyPlan) || 0,
+        inviteCode: makeInviteCode(),
       },
     });
     return NextResponse.json({ ok: true, id: user.id });

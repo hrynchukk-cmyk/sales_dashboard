@@ -13,6 +13,8 @@ type Seller = {
   weeklyPlan: number;
   monthlyPlan: number;
   status: "ACTIVE" | "BLOCKED";
+  inviteCode: string | null;
+  telegramId: string | null;
 };
 type Stats = { monthSales: number; monthPct: number; earnings: number; bonuses: number };
 type Activity = {
@@ -33,16 +35,38 @@ export default function SellerProfile({
   seller,
   stats,
   activities,
+  botUsername,
 }: {
   seller: Seller;
   stats: Stats;
   activities: Activity[];
+  botUsername: string;
 }) {
   const router = useRouter();
   const [form, setForm] = useState(seller);
   const [savedMsg, setSavedMsg] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  async function patch(data: Partial<Seller>, msg: string) {
+  const inviteLink =
+    seller.inviteCode && botUsername
+      ? `https://t.me/${botUsername}?start=${seller.inviteCode}`
+      : null;
+
+  async function regenInvite() {
+    await patch({ regenerateInvite: true }, "Код оновлено");
+  }
+  async function unlinkTelegram() {
+    if (!confirm("Відвʼязати Telegram-акаунт продавця?")) return;
+    await patch({ unlinkTelegram: true }, "Telegram відвʼязано");
+  }
+  function copyLink() {
+    if (!inviteLink) return;
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  async function patch(data: Record<string, unknown>, msg: string) {
     const res = await fetch(`/api/sellers/${seller.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -199,6 +223,50 @@ export default function SellerProfile({
             <div className="m-val">{uah(stats.bonuses)}</div>
           </div>
         </div>
+      </div>
+
+      {/* Telegram (Variant 2) */}
+      <div className="card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <i className="ti ti-brand-telegram text-[#1565C0]" />
+          <div className="text-[11px] font-medium flex-1">Telegram бот</div>
+          {seller.telegramId ? (
+            <Tag tone="green">Привʼязано</Tag>
+          ) : (
+            <Tag tone="warn">Не привʼязано</Tag>
+          )}
+        </div>
+
+        {seller.telegramId ? (
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-[#888]">Telegram ID: {seller.telegramId}</span>
+            <button className="btn-danger text-[11px]" onClick={unlinkTelegram}>
+              Відвʼязати
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="text-[11px] text-[#888]">
+              Надішліть продавцю посилання — за ним бот привʼяже його акаунт і запустить онбординг.
+            </div>
+            {inviteLink ? (
+              <div className="flex items-center gap-2">
+                <input className="input text-[11px]" value={inviteLink} readOnly />
+                <button className="btn text-[11px]" onClick={copyLink}>
+                  {copied ? "✓" : "Копіювати"}
+                </button>
+              </div>
+            ) : (
+              <div className="text-[11px] text-[#C62828]">
+                Вкажіть <code>TELEGRAM_BOT_USERNAME</code> у .env, щоб згенерувати посилання.
+                {seller.inviteCode && <> Інвайт-код: <b>{seller.inviteCode}</b></>}
+              </div>
+            )}
+            <button className="btn text-[11px] self-start" onClick={regenInvite}>
+              <i className="ti ti-refresh" /> Згенерувати новий код
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Bonus moderation */}

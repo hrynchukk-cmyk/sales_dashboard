@@ -25,6 +25,7 @@ export default async function SellerProfilePage({
 
   return (
     <SellerProfile
+      botUsername={process.env.TELEGRAM_BOT_USERNAME ?? ""}
       seller={{
         id: seller.id,
         name: seller.name,
@@ -33,6 +34,8 @@ export default async function SellerProfilePage({
         weeklyPlan: seller.weeklyPlan,
         monthlyPlan: seller.monthlyPlan,
         status: seller.status,
+        inviteCode: seller.inviteCode,
+        telegramId: seller.telegramId,
       }}
       stats={{
         monthSales: stats.monthSales,

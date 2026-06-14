@@ -2,6 +2,7 @@ node_modules
 .next
 out
 build
+*.tsbuildinfo
 *.log
 # NOTE: .env is committed on purpose — it holds only non-sensitive dev defaults
 # (local SQLite + a throwaway JWT secret) so the project runs straight after download.

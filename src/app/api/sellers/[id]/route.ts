@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin, handler } from "@/lib/api";
 import { hashPassword } from "@/lib/auth";
+import { makeInviteCode } from "@/lib/course";
 
 // Edit seller: profile, %, plans, status, password (per SoW 2.1 / 2.3).
 export async function PATCH(
@@ -21,6 +22,9 @@ export async function PATCH(
     if (b.status != null) data.status = b.status;
     if (b.onboardingDone != null) data.onboardingDone = Boolean(b.onboardingDone);
     if (b.password) data.passwordHash = await hashPassword(String(b.password));
+    // Telegram (Variant 2): (re)generate invite code or unlink the account.
+    if (b.regenerateInvite) data.inviteCode = makeInviteCode();
+    if (b.unlinkTelegram) data.telegramId = null;
 
     const user = await prisma.user.update({ where: { id }, data });
     return NextResponse.json({ ok: true, id: user.id });

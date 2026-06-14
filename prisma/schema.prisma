@@ -39,6 +39,10 @@ model User {
   onboardingDone    Boolean  @default(false)
   createdAt         DateTime @default(now())
 
+  // Telegram bot (Variant 2): link a seller's Telegram account via invite code.
+  telegramId        String?  @unique
+  inviteCode        String?  @unique
+
   salesRecords      SalesRecord[]
   bonusActivities   BonusActivity[]
   moduleProgress    ModuleProgress[]
