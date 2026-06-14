@@ -1,0 +1,148 @@
+// Prisma schema — Internal Sales & Onboarding Platform
+// Uses SQLite for out-of-the-box run; switch `provider` to "postgresql" per SoW.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  SELLER
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum BonusStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                String   @id @default(cuid())
+  name              String
+  email             String   @unique
+  passwordHash      String
+  role              Role     @default(SELLER)
+  status            UserStatus @default(ACTIVE)
+  earningPercent    Float    @default(10) // individual % of sales
+  weeklyPlan        Float    @default(0)
+  monthlyPlan       Float    @default(0)
+  onboardingDone    Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  salesRecords      SalesRecord[]
+  bonusActivities   BonusActivity[]
+  moduleProgress    ModuleProgress[]
+  testAttempts      TestAttempt[]
+  products          Product[]
+}
+
+// ── Onboarding course ────────────────────────────────────────────────
+model CourseModule {
+  id          String   @id @default(cuid())
+  order       Int
+  title       String
+  textContent String   @default("")
+  videoUrl    String?
+  photos      String   @default("[]") // JSON array of image urls
+  passScore   Int      @default(80)
+  createdAt   DateTime @default(now())
+
+  questions   TestQuestion[]
+  progress    ModuleProgress[]
+  attempts    TestAttempt[]
+}
+
+model TestQuestion {
+  id            String   @id @default(cuid())
+  moduleId      String
+  module        CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  order         Int      @default(0)
+  text          String
+  options       String   @default("[]") // JSON array of option strings
+  correctIndex  Int      @default(0)
+}
+
+model ModuleProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleId    String
+  module      CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  completed   Boolean  @default(false)
+  bestScore   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, moduleId])
+}
+
+model TestAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleId    String
+  module      CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  score       Int
+  passed      Boolean
+  createdAt   DateTime @default(now())
+}
+
+// ── Sales ────────────────────────────────────────────────────────────
+model SalesRecord {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime // day of the sale (date only, stored at midnight)
+  amount      Float
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+// ── Bonus activities ─────────────────────────────────────────────────
+model BonusActivity {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String   // Instagram / Facebook / OLX / Site / Other
+  description   String   @default("")
+  link          String?
+  screenshotUrl String?
+  amount        Float    @default(0)
+  status        BonusStatus @default(PENDING)
+  createdAt     DateTime @default(now())
+}
+
+// ── Catalog ──────────────────────────────────────────────────────────
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  article     String   @default("")
+  photoUrl    String?
+  price       Float    @default(0)
+  color       String   @default("")
+  size        String   @default("")
+  gender      String   @default("") // Чоловічий / Жіночий / Унісекс
+  category    String   @default("")
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+}
+
+// ── Global settings (singleton) ──────────────────────────────────────
+model Settings {
+  id              Int    @id @default(1)
+  bonusPerActivity Float @default(150)
+  companyName     String @default("Sales Platform")
+}
